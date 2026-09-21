@@ -14,6 +14,7 @@ cp build/ancla "$APP/Contents/MacOS/Ancla"
 cp resources/Ancla-Info.plist "$APP/Contents/Info.plist"
 rm -rf "$HOME/.local/bin/Ancla.app"
 cp -R build/Ancla.app "$HOME/.local/bin/Ancla.app"
+cp build/ancla "$HOME/.local/bin/ancla"
 
 # --- menu bar indicator ---
 swiftc -O src/AnclaBar.swift -o build/AnclaBar

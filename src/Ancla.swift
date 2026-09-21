@@ -155,7 +155,20 @@ if !bodyLine.isEmpty { stack.addArrangedSubview(body) }
 stack.addArrangedSubview(phaseTitle)
 stack.addArrangedSubview(circle)
 stack.addArrangedSubview(icons)
-window.contentView!.addSubview(stack)
+
+// widen-the-gaze field — visible only during "ensancha": hearts connected to
+// each other and to the forest. soft-focus alpha so it reads as a forest, not icons.
+let field = NSTextField(labelWithString: "💚  💚  💚  💚  💚  💚\n  🌲    🌲    🌲    🌲\n💚  💚  💚  💚  💚  💚")
+field.font = NSFont.systemFont(ofSize: 30)
+field.alignment = .center
+field.alphaValue = 0.0
+field.translatesAutoresizingMaskIntoConstraints = false
+window.contentView!.addSubview(field, positioned: .below, relativeTo: stack)
+NSLayoutConstraint.activate([
+    field.centerXAnchor.constraint(equalTo: window.contentView!.centerXAnchor),
+    field.centerYAnchor.constraint(equalTo: window.contentView!.centerYAnchor),
+])
+
 window.contentView!.addSubview(meta)
 window.contentView!.addSubview(hint)
 
@@ -201,8 +214,10 @@ let tick = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { _
         let v = circleMin + (circleSize - circleMin) * CGFloat(p)
         circleConstraint.constant = v
         circleHeight.constant = v
+        field.alphaValue = 0.85 * CGFloat(p) // gaze widens: the field surfaces
     } else {
         phaseTitle.stringValue = "gente, lento"
+        field.alphaValue = 0.85 * max(0, 1 - (t - 12.5) / 2.5) // holds then fades
     }
     circle.layer?.cornerRadius = circleConstraint.constant / 2
 }

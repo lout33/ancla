@@ -23,7 +23,10 @@ echo "$now" > "$LASTLAUNCH"
 
 # streak (consecutive days with at least one rep)
 today=$(date +%Y-%m-%d)
-sline=$(cat "$STREAK" 2>/dev/null || echo "0 $today")
+if [ ! -s "$STREAK" ]; then
+  echo "1 $today" > "$STREAK"   # day 1 of the streak
+fi
+sline=$(cat "$STREAK" 2>/dev/null || echo "1 $today")
 sn=$(echo "$sline" | cut -d' ' -f1)
 sd=$(echo "$sline" | cut -d' ' -f2)
 if [ "$sd" != "$today" ]; then

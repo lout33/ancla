@@ -12,12 +12,16 @@ final class KeyWindow: NSWindow {
 let totalSeconds: Double = 15
 let idleSkipSeconds: Double = 120
 
-// Skip if nobody is at the desk
+// Launch args (parsed early): mode, mission text, "force" flag
+let args = CommandLine.arguments
+let forceFlag = args.contains("force")
+
+// Skip if nobody is at the desk — unless the launch was explicitly forced
 let idle = CGEventSource.secondsSinceLastEventType(
     .combinedSessionState,
     eventType: CGEventType(rawValue: ~0)!
 )
-if idle > idleSkipSeconds { exit(0) }
+if idle > idleSkipSeconds && !forceFlag { exit(0) }
 
 let fm = FileManager.default
 let stateDir = NSHomeDirectory() + "/.local/state"
@@ -57,7 +61,6 @@ if repLabel.isEmpty {
 }
 
 // Mode from launch args: breath (default) | stand | change | test | mission
-let args = CommandLine.arguments
 let mode = args.count > 1 ? args[1] : "breath"
 let missionText = args.count > 2 ? args[2] : ""
 let guided = (mode != "test")

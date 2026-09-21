@@ -14,11 +14,18 @@ mkdir -p "$(dirname "$STATE")"
 
 now=$(date +%s)
 lastlaunch=$(cat "$LASTLAUNCH" 2>/dev/null || echo 0)
+FORCE="$HOME/.local/state/ancla-force"
+forceflag=""
 
-# variable cadence gate
-gap=$((now - lastlaunch))
-if [ "$gap" -lt 1200 ]; then exit 0; fi
-if [ $((RANDOM % 100)) -ge 60 ]; then exit 0; fi
+# variable cadence gate — bypassed when "fuego ahora" leaves the force flag
+if [ -f "$FORCE" ]; then
+  rm -f "$FORCE"
+  forceflag="force"
+else
+  gap=$((now - lastlaunch))
+  if [ "$gap" -lt 1200 ]; then exit 0; fi
+  if [ $((RANDOM % 100)) -ge 60 ]; then exit 0; fi
+fi
 echo "$now" > "$LASTLAUNCH"
 
 # streak (consecutive days with at least one rep)
@@ -67,4 +74,4 @@ else
   mode="breath"
 fi
 
-open "$HOME/.local/bin/Ancla.app" --args "$mode" "$mission"
+open "$HOME/.local/bin/Ancla.app" --args "$mode" "$mission" "$forceflag"

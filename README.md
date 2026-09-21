@@ -33,6 +33,10 @@ launchd (com.pepe.movement, StartInterval 900)
   └─ scripts/movement-reminder.sh        # cadence gate, streak, mission, mode selection
        └─ open ~/.local/bin/Ancla.app    # LaunchServices-detached native app
             └─ src/Ancla.swift           # full-screen overlay, level .screenSaver, all Spaces
+
+launchd (com.pepe.anclabar, KeepAlive)   # always-on menu bar indicator
+  └─ src/AnclaBar.swift                  # ⚓ + minutes since last rep; menu:
+                                         #   fuego ahora · pausar/reanudar · misión · log · salir
 ```
 
 - **Window:** borderless, `level = .screenSaver` (above fullscreen apps), `canJoinAllSpaces + fullScreenAuxiliary` (any Space) — the properties osascript alerts don't have

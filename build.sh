@@ -4,6 +4,7 @@
 set -e
 cd "$(dirname "$0")"
 
+mkdir -p build
 swiftc -O src/Ancla.swift -o build/ancla
 
 APP=build/Ancla.app

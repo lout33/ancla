@@ -80,18 +80,23 @@ func refresh() {
 
 final class MenuTarget: NSObject {
     @objc func fireNow() {
-        _ = shell("echo 0 > ~/.local/state/ancla-lastlaunch && launchctl kickstart gui/\(getuid())/\(agentLabel)")
+        if StatusLine.paused { resume() }
+        // force flag bypasses the variable-cadence gate in the metronome script
+        _ = shell("touch ~/.local/state/ancla-force && launchctl kickstart gui/\(getuid())/\(agentLabel)")
         refresh()
     }
     @objc func togglePause() {
-        if StatusLine.paused {
-            _ = shell("launchctl load \(agentPlist)")
-            StatusLine.paused = false
-        } else {
-            _ = shell("launchctl unload \(agentPlist)")
-            StatusLine.paused = true
-        }
+        if StatusLine.paused { resume() } else { pause() }
         refresh()
+    }
+    func pause() {
+        _ = shell("launchctl bootout gui/\(getuid())/\(agentLabel)")
+        StatusLine.paused = true
+    }
+    func resume() {
+        // bootstrap is the modern API; load is the fallback (macOS 26 load is broken)
+        _ = shell("launchctl bootstrap gui/\(getuid()) \(agentPlist) 2>/dev/null || launchctl load \(agentPlist)")
+        StatusLine.paused = false
     }
     @objc func openLog() {
         NSWorkspace.shared.open(URL(fileURLWithPath: stateDir + "/ancla-log.csv"))

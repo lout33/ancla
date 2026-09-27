@@ -92,7 +92,6 @@ func appendLine(_ line: String, to path: String) {
 }
 let logPath = stateDir + "/ancla-log.csv"
 let stamp = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .short)
-appendLine("\(stamp),\(mode)\n", to: logPath)
 
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
@@ -155,6 +154,7 @@ if !bodyLine.isEmpty { stack.addArrangedSubview(body) }
 stack.addArrangedSubview(phaseTitle)
 stack.addArrangedSubview(circle)
 stack.addArrangedSubview(icons)
+window.contentView!.addSubview(stack)
 
 // widen-the-gaze field — visible only during "ensancha": hearts connected to
 // each other and to the forest. soft-focus alpha so it reads as a forest, not icons.
@@ -233,4 +233,6 @@ let clickMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { 
 }
 
 window.makeKeyAndOrderFront(nil)
+// Only a rep that actually reached the screen counts.
+appendLine("\(stamp),\(mode)\n", to: logPath)
 app.run()

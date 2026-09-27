@@ -37,6 +37,11 @@ Everything lives in the **⚓ menu bar item**:
 
 On the overlay: **ESC or click** closes it (ignored for the first 1.5 s so a click in flight doesn't kill the rep).
 
+Every rep also:
+
+- **Pauses whatever is playing** (Music, Spotify, YouTube in the browser — anything in macOS Now Playing) and resumes it when the rep ends. It only resumes what it paused: if you had paused it yourself, it stays paused.
+- **Shows one intention**, picked at random for now: *understand · connect · express clearly · set a boundary · enjoy the moment* (list in `src/Overlay.swift`, `Intention.all`). Each rep's intention is written to the events log.
+
 CLI (for agents and testing):
 
 ```bash
@@ -62,8 +67,11 @@ launchd (com.pepe.ancla: RunAtLoad, KeepAlive on crash only)
        src/Scheduler.swift  cadence, idle-wait, wake, pause, mode rules, crash detection
        src/Overlay.swift    full-screen panels at .screenSaver level, the 15 s cycle
        src/MenuBar.swift    ⚓ status item and menu
+       src/Media.swift      pause/resume Now Playing media
        src/Store.swift      state (JSON), rep CSV, event log
 ```
+
+Media control: since macOS 15.4, MediaRemote no longer reports playback state to third-party apps, so `Media.swift` reads it through Apple's own `osascript` (JXA, ~60 ms) and sends pause/play with `MRMediaRemoteSendCommand` directly. Private framework: if a macOS update breaks it, reps still run, just without pausing. Known gap: if the app crashes mid-rep, the media it paused stays paused.
 
 State in `~/.local/state/`: `ancla.json` (schedule + counters), `ancla-log.csv` (one row per rep: time, mode, completo / cerrado con esc|clic a los Ns), `ancla-events.log` (diagnostics), `ancla-mission.txt`.
 

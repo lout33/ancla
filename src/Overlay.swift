@@ -15,12 +15,19 @@ enum OverlayOutcome {
     }
 }
 
+enum Intention {
+    /// Picked at random for now; meant to become smarter later.
+    static let all = ["understand", "connect", "express clearly", "set a boundary", "enjoy the moment"]
+    static func random() -> String { all.randomElement() ?? all[0] }
+}
+
 struct OverlayContent {
     /// breath | stand | change | test | mission
     var mode: String
     var mission: String
     /// Top-left label, e.g. "⚓ ancla · rep 3 hoy · racha 2d".
     var meta: String
+    var intention: String = Intention.random()
 }
 
 /// Non-activating so the overlay can take keyboard focus (ESC) without
@@ -51,6 +58,8 @@ final class Overlay {
     private var start = Date()
     private var done = false
     private var previousApp: NSRunningApplication?
+    /// Set when this rep paused someone's media; resumed on finish.
+    private(set) var pausedMedia: Media.NowPlaying?
 
     private let phaseTitle = NSTextField(labelWithString: "presiona")
     private let circle = NSView()
@@ -70,6 +79,7 @@ final class Overlay {
     func show() {
         let screens = NSScreen.screens
         guard !screens.isEmpty else { return }
+        pausedMedia = Media.pauseIfPlaying()
         let mouse = NSEvent.mouseLocation
         let primary = screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main ?? screens[0]
 
@@ -128,6 +138,7 @@ final class Overlay {
             prev.activate()
         }
         previousApp = nil
+        if pausedMedia != nil { Media.resume() }
         onFinish(outcome)
     }
 
@@ -213,6 +224,17 @@ final class Overlay {
         stack.addArrangedSubview(phaseTitle)
         stack.addArrangedSubview(circle)
         stack.addArrangedSubview(icons)
+
+        let intentionTitle = NSTextField(labelWithString: "intención")
+        intentionTitle.font = .systemFont(ofSize: 14, weight: .medium)
+        intentionTitle.textColor = Overlay.dim
+        let intention = NSTextField(labelWithString: content.intention)
+        intention.font = .systemFont(ofSize: 28, weight: .semibold)
+        intention.textColor = NSColor(red: 0.85, green: 0.80, blue: 0.70, alpha: 1)
+        stack.addArrangedSubview(intentionTitle)
+        stack.addArrangedSubview(intention)
+        stack.setCustomSpacing(40, after: icons)
+        stack.setCustomSpacing(6, after: intentionTitle)
 
         // widen-the-gaze field: surfaces only during "ensancha", soft alpha so
         // it reads as a forest, not icons.

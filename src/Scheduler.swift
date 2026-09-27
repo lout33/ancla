@@ -157,7 +157,8 @@ final class Scheduler {
         }
 
         store.update { Scheduler.applyRep(&$0, mode: mode, now: now) }
-        Log.event("rep shown: \(mode) (\(reason))")
+        let media = ov.pausedMedia.map { "; paused \($0.app): \($0.title)" } ?? ""
+        Log.event("rep shown: \(mode) (\(reason)); intention: \(content.intention)\(media)")
         onChange()
     }
 

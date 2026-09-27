@@ -1,33 +1,11 @@
 #!/bin/bash
-# Build Ancla.app — native full-screen anchor overlay
+# Build build/Ancla.app from src/*.swift.
 # Usage: ./build.sh
-set -e
+set -euo pipefail
 cd "$(dirname "$0")"
-
-mkdir -p build
-swiftc -O src/Ancla.swift -o build/ancla
 
 APP=build/Ancla.app
 mkdir -p "$APP/Contents/MacOS"
-cp build/ancla "$APP/Contents/MacOS/Ancla"
-cat > "$APP/Contents/Info.plist" <<'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleIdentifier</key>
-    <string>com.pepe.ancla</string>
-    <key>CFBundleName</key>
-    <string>Ancla</string>
-    <key>CFBundleExecutable</key>
-    <string>Ancla</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>LSUIElement</key>
-    <true/>
-    <key>NSHighResolutionCapable</key>
-    <true/>
-</dict>
-</plist>
-EOF
+swiftc -O src/*.swift -o "$APP/Contents/MacOS/Ancla"
+cp resources/Info.plist "$APP/Contents/Info.plist"
 echo "built: $APP"

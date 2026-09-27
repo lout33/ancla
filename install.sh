@@ -1,75 +1,91 @@
 #!/bin/bash
-# Install the Ancla metronome + menu bar indicator on this Mac.
+# Install (or reinstall) Ancla on this Mac. Safe to run repeatedly.
 # Usage: ./install.sh
-set -e
+set -euo pipefail
 cd "$(dirname "$0")"
 
-mkdir -p build "$HOME/.local/bin" "$HOME/.local/state" "$HOME/Library/LaunchAgents"
+LABEL=com.pepe.ancla
+UID_NUM=$(id -u)
+BIN="$HOME/.local/bin"
+STATE="$HOME/.local/state"
+AGENTS="$HOME/Library/LaunchAgents"
+PLIST="$AGENTS/$LABEL.plist"
+RETIRED="$STATE/ancla-retired"
 
-# --- overlay app ---
-swiftc -O src/Ancla.swift -o build/ancla
-APP=build/Ancla.app
-mkdir -p "$APP/Contents/MacOS"
-cp build/ancla "$APP/Contents/MacOS/Ancla"
-cp resources/Ancla-Info.plist "$APP/Contents/Info.plist"
-rm -rf "$HOME/.local/bin/Ancla.app"
-cp -R build/Ancla.app "$HOME/.local/bin/Ancla.app"
-cp build/ancla "$HOME/.local/bin/ancla"
+./build.sh
+mkdir -p "$BIN" "$STATE" "$AGENTS"
 
-# --- menu bar indicator ---
-swiftc -O src/AnclaBar.swift -o build/AnclaBar
-BAR=build/AnclaBar.app
-mkdir -p "$BAR/Contents/MacOS"
-cp build/AnclaBar "$BAR/Contents/MacOS/AnclaBar"
-cp resources/AnclaBar-Info.plist "$BAR/Contents/Info.plist"
-rm -rf "$HOME/.local/bin/AnclaBar.app"
-cp -R build/AnclaBar.app "$HOME/.local/bin/AnclaBar.app"
+# --- retire the v1 pieces (script metronome + separate menu bar app) ---
+# Moved aside, never deleted.
+retire() {
+  local src=$1
+  if [ -e "$src" ]; then
+    mkdir -p "$RETIRED"
+    local dest="$RETIRED/$(basename "$src")"
+    [ -e "$dest" ] && dest="$dest.$(date +%Y%m%d%H%M%S)"
+    mv "$src" "$dest"
+    echo "  retired $src → $dest"
+  fi
+}
+for old in com.pepe.movement com.pepe.anclabar; do
+  launchctl bootout "gui/$UID_NUM/$old" 2>/dev/null || true
+  retire "$AGENTS/$old.plist"
+done
+retire "$BIN/AnclaBar.app"
+retire "$BIN/movement-reminder.sh"
+retire "$BIN/Ancla.swift"
+# v1 installed the overlay as a bare binary; v2 installs a wrapper script here.
+if [ -f "$BIN/ancla" ] && ! grep -q "Ancla.app/Contents/MacOS/Ancla" "$BIN/ancla" 2>/dev/null; then
+  retire "$BIN/ancla"
+fi
 
-# --- metronome script ---
-cp scripts/movement-reminder.sh "$HOME/.local/bin/movement-reminder.sh"
-chmod +x "$HOME/.local/bin/movement-reminder.sh"
+# --- stop the running app, swap the bundle ---
+launchctl bootout "gui/$UID_NUM/$LABEL" 2>/dev/null || true
+rm -rf "$BIN/Ancla.app"
+cp -R build/Ancla.app "$BIN/Ancla.app"
 
-# --- launchd agents (generated with real $HOME — portable) ---
-cat > "$HOME/Library/LaunchAgents/com.pepe.movement.plist" <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key><string>com.pepe.movement</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/bin/bash</string>
-        <string>$HOME/.local/bin/movement-reminder.sh</string>
-    </array>
-    <key>StartInterval</key><integer>900</integer>
-    <key>RunAtLoad</key><false/>
-</dict>
-</plist>
+cat > "$BIN/ancla" <<EOF
+#!/bin/bash
+exec "$BIN/Ancla.app/Contents/MacOS/Ancla" "\$@"
 EOF
+chmod +x "$BIN/ancla"
 
-cat > "$HOME/Library/LaunchAgents/com.pepe.anclabar.plist" <<EOF
+# --- LaunchAgent: start at login, restart on crash, stay quit after "Salir" ---
+cat > "$PLIST" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>Label</key><string>com.pepe.anclabar</string>
+    <key>Label</key><string>$LABEL</string>
     <key>ProgramArguments</key>
     <array>
-        <string>$HOME/.local/bin/AnclaBar.app/Contents/MacOS/AnclaBar</string>
+        <string>$BIN/Ancla.app/Contents/MacOS/Ancla</string>
     </array>
     <key>RunAtLoad</key><true/>
-    <key>KeepAlive</key><true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key><false/>
+    </dict>
+    <key>LimitLoadToSessionType</key><string>Aqua</string>
+    <key>ProcessType</key><string>Interactive</string>
+    <key>StandardOutPath</key><string>$STATE/ancla-stdout.log</string>
+    <key>StandardErrorPath</key><string>$STATE/ancla-stderr.log</string>
 </dict>
 </plist>
 EOF
+plutil -lint "$PLIST" >/dev/null
 
-launchctl unload "$HOME/Library/LaunchAgents/com.pepe.movement.plist" 2>/dev/null || true
-launchctl load "$HOME/Library/LaunchAgents/com.pepe.movement.plist"
-launchctl unload "$HOME/Library/LaunchAgents/com.pepe.anclabar.plist" 2>/dev/null || true
-launchctl load "$HOME/Library/LaunchAgents/com.pepe.anclabar.plist"
+# bootout finishes asynchronously; retry bootstrap until launchd lets go.
+for _ in $(seq 1 20); do
+  if launchctl bootstrap "gui/$UID_NUM" "$PLIST" 2>/dev/null; then break; fi
+  sleep 0.5
+done
+launchctl print "gui/$UID_NUM/$LABEL" >/dev/null 2>&1 || { echo "failed to load $LABEL" >&2; exit 1; }
 
+sleep 1
 echo "installed ✓"
-echo "  interval:        $(plutil -extract StartInterval raw "$HOME/Library/LaunchAgents/com.pepe.movement.plist")s (fires) → overlay cada ~20-40 min"
-echo "  test now:        launchctl kickstart gui/\$(id -u)/com.pepe.movement"
-echo "  pause/resume:    menu bar ⚓ → Pausar/Reanudar (o launchctl unload/load com.pepe.movement)"
-echo "  daily mission:   echo 'tu mision' > ~/.local/state/ancla-mission.txt"
+"$BIN/ancla" status || true
+echo
+echo "  menu bar ⚓ → fuego ahora · pausar · ritmo · misión · logs"
+echo "  cli:         ancla fire | ancla preview [mode] | ancla status"
+echo "  diagnostics: $STATE/ancla-events.log"

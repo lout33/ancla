@@ -41,31 +41,31 @@ let app = NSApplication.shared
 switch args.first {
 case "fire":
     guard appIsRunning() else {
-        print("ancla no está corriendo. arráncalo con: launchctl kickstart gui/\(getuid())/com.pepe.ancla")
+        print("ancla is not running. start it with: launchctl kickstart gui/\(getuid())/com.pepe.ancla")
         exit(1)
     }
     DistributedNotificationCenter.default().postNotificationName(
         Scheduler.fireNotification, object: nil, userInfo: nil, deliverImmediately: true)
-    print("rep enviado")
+    print("rep sent")
     exit(0)
 
 case "status":
     guard let s = Store.readOnly() else {
-        print("sin estado todavía (\(Paths.state))")
+        print("no state yet (\(Paths.state))")
         exit(1)
     }
     let running = appIsRunning()
-    print("app:     \(running ? "corriendo" : "NO está corriendo")")
-    print("agenda:  \(StatusText.schedule(s, showing: s.overlayInFlight != nil, away: Presence.away))")
-    print("reps:    \(StatusText.summary(s))")
-    print("ritmo:   \(s.rhythm.label)")
-    print("ausente: \(Presence.away ? "sí" : "no") (idle \(Int(Presence.idleSeconds))s)")
-    if let f = s.lastFailure { print("FALLO:   \(f)") }
+    print("app:      \(running ? "running" : "NOT running")")
+    print("schedule: \(StatusText.schedule(s, showing: s.overlayInFlight != nil, away: Presence.away))")
+    print("reps:     \(StatusText.summary(s))")
+    print("rhythm:   \(s.rhythm.label)")
+    print("away:     \(Presence.away ? "yes" : "no") (idle \(Int(Presence.idleSeconds))s)")
+    if let f = s.lastFailure { print("FAILURE:  \(f)") }
     exit(running ? 0 : 1)
 
 case "preview":
     let mode = args.count > 1 ? args[1] : "breath"
-    let mission = args.count > 2 ? args[2] : "misión de prueba"
+    let mission = args.count > 2 ? args[2] : "test mission"
     app.setActivationPolicy(.accessory)
     let preview = Overlay(content: OverlayContent(mode: mode, mission: mission, meta: "⚓ ancla · preview")) { outcome in
         print("preview \(mode): \(outcome.logValue)")

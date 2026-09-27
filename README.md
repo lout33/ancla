@@ -1,17 +1,23 @@
 # Ancla ⚓
 
-A native macOS menu bar app that interrupts you every ~20–40 minutes and **conducts a 15-second regulation cycle** — part body metronome, part nervous-system training for showing up calm in social moments.
+[![build](https://github.com/lout33/ancla/actions/workflows/build.yml/badge.svg)](https://github.com/lout33/ancla/actions/workflows/build.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![macOS 13+](https://img.shields.io/badge/macOS-13%2B-black)
+
+A native macOS menu bar app that interrupts you every ~20–40 minutes and conducts a 15-second regulation cycle — a full-screen breathing circle, one intention, and back to work slower than you left it.
 
 > The two clocks: **projects fast, people slow.** One engine (urgency) wants to hurry both. Ancla is the governor — a machine whose only job is slowing you down on purpose, system-fired, zero willpower.
 
+![Ancla rep in progress](docs/screenshots/rep.png)
+
 ## The cycle (15 s, guided by a breathing circle)
 
-1. **presiona** — thumb hard against the meñique (pinky). The anchor: an invisible, always-carried gesture
-2. **exhala** — the circle deflates for 7 s; eyes follow the circle, lungs follow the eyes (long exhale > inhale = physiological sigh)
-3. **ensancha** — the circle expands and the forest field surfaces; widen the gaze to the whole room, three things unrelated to the task
-4. **gente, lento** — return to work at that tempo
+1. **press** — thumb hard against the pinky. The anchor: an invisible, always-carried gesture
+2. **exhale** — the circle deflates for 7 s; eyes follow the circle, lungs follow the eyes (a long exhale beats an inhale: physiological sigh)
+3. **widen** — the circle expands and a field surfaces; widen the gaze to the whole room, find three things unrelated to the task
+4. **people, slow** — return to work at that tempo
 
-**Why:** the exhale + peripheral-widen is the antidote to tunnel-vision fixation; the thumb-press is a proprioceptive cue the body can find faster than a thought. Practiced at the desk many times a day, the chain generalizes to real "doors" (a match goes quiet, a room feels slow, a date reaches the ramp, someone says *not yet*).
+The exhale + peripheral-widen is the antidote to tunnel-vision fixation; the thumb-press is a proprioceptive cue the body can find faster than a thought. Practiced at the desk many times a day, the chain generalizes to real "doors" — a conversation that goes quiet, a room that feels slow, the moment before you hit send.
 
 ## Modes
 
@@ -19,36 +25,43 @@ A native macOS menu bar app that interrupts you every ~20–40 minutes and **con
 |---|---|---|
 | **breath** | most reps | circle + 🤏 |
 | **stand / change** | every 4th rep, alternating | circle + 🤏 🧍 🚶 or 🤏 🔄 🪑 |
-| **test** | every 6th rep | no guidance — *"haz el ciclo — tú diriges"* (prompt fading: the goal is the app becoming unnecessary) |
-| **mission** | first rep of the day, if a mission is set | your one line on top of the cycle |
+| **test** | every 6th rep | no guidance — *"run the cycle — you lead"* (prompt fading: the goal is the app becoming unnecessary) |
+| **mission** | first rep of the day, if one is set | your one line on top of the cycle |
+
+Every rep also shows one **intention**, picked at random for now: *understand · connect · express clearly · set a boundary · enjoy the moment*. And it pauses whatever you're watching or listening to (Music, Spotify, YouTube in a browser — anything in macOS Now Playing), resuming it when the rep ends. Media you paused yourself stays paused.
 
 ## Using it
 
 Everything lives in the **⚓ menu bar item**:
 
 - **Title** — `⚓ 12m` minutes since the last real rep · `⚓ ‖` paused · `⚓ !` something failed (open the menu to see what)
-- **Status lines** — last rep, reps today, streak, and when the next rep is due (or "sale cuando vuelvas" if one is waiting for you)
-- **Fuego ahora** — a rep right now
-- **Pausar ▸** 30 min · 1 hora · 2 horas · hasta mañana (08:00) · hasta que reanude — resumes by itself, survives restarts
-- **Ritmo ▸** corto 15–25 · normal 20–40 · largo 40–60 min
-- **Misión de hoy…** — type one line; it rides the next rep
-- **Ver log de reps / Ver eventos** — the CSV of reps and the diagnostic trail
-- **Salir de Ancla** — stays quit until next login (or `launchctl kickstart gui/$(id -u)/com.pepe.ancla`)
-
-On the overlay: **ESC or click** closes it (ignored for the first 1.5 s so a click in flight doesn't kill the rep).
-
-Every rep also:
-
-- **Pauses whatever is playing** (Music, Spotify, YouTube in the browser — anything in macOS Now Playing) and resumes it when the rep ends. It only resumes what it paused: if you had paused it yourself, it stays paused.
-- **Shows one intention**, picked at random for now: *understand · connect · express clearly · set a boundary · enjoy the moment* (list in `src/Overlay.swift`, `Intention.all`). Each rep's intention is written to the events log.
+- **Status lines** — last rep, reps today, streak, and when the next rep is due (or *"fires when you're back"* if one is waiting for you)
+- **Fire now** — a rep right now
+- **Pause ▸** 30 min · 1 hour · 2 hours · until tomorrow (8:00) · until I resume — resumes by itself, survives restarts
+- **Rhythm ▸** short 15–25 · normal 20–40 · long 40–60 min
+- **Today's mission…** — type one line; it rides the next rep
+- **View rep log / View events** — the CSV of reps and the diagnostic trail
+- **Quit Ancla** — stays quit until next login (or `launchctl kickstart gui/$(id -u)/com.pepe.ancla`)
 
 CLI (for agents and testing):
 
 ```bash
-ancla status              # schedule, counters, failures; exit 1 if the app isn't running
-ancla fire                # rep now in the running app
+ancla status                  # schedule, counters, failures; exit 1 if the app isn't running
+ancla fire                    # rep now in the running app
 ancla preview [mode] [text]   # one overlay, touches no state
 ```
+
+On the overlay: **ESC or click** closes it (ignored for the first 1.5 s, so a click already in flight doesn't kill the rep). Focus returns to the app you were in.
+
+## Why another break app
+
+Tools like [Glimt](https://www.glimtapp.io/) ($39), [Stretchly](https://github.com/hovancik/stretchly) and [Time Out](https://dejal.com/timeout/) do reminders and breathing well. Ancla differs on purpose:
+
+- **15 seconds, full screen.** Not a notification, a takeover. Short enough to never cost anything, total enough to actually reset the tempo.
+- **A trainable chain, not a wellness pattern.** Press → exhale → widen → people, slow is one rehearsal, repeated, not a meditation session.
+- **Prompt fading.** Every 6th rep is unguided. The success metric is the app making itself unnecessary — an odd goal for a subscription, a natural one for a tool.
+- **A rep counts only once it's on screen.** Counters, streaks and logs record what actually happened, and failures surface in the menu bar instead of hiding.
+- **No permissions, no account, no telemetry.** One binary, `swiftc`, done.
 
 ## Reliability rules
 
@@ -61,7 +74,7 @@ ancla preview [mode] [text]   # one overlay, touches no state
 ## Architecture
 
 ```
-launchd (com.pepe.ancla: RunAtLoad, KeepAlive on crash only)
+launchd (com.pepe.ancla: run at login, restart on crash only)
   └─ ~/.local/bin/Ancla.app            one process, menu bar only (LSUIElement)
        src/main.swift       entry: app | fire | preview | status; flock singleton
        src/Scheduler.swift  cadence, idle-wait, wake, pause, mode rules, crash detection
@@ -71,31 +84,40 @@ launchd (com.pepe.ancla: RunAtLoad, KeepAlive on crash only)
        src/Store.swift      state (JSON), rep CSV, event log
 ```
 
-Media control: since macOS 15.4, MediaRemote no longer reports playback state to third-party apps, so `Media.swift` reads it through Apple's own `osascript` (JXA, ~60 ms) and sends pause/play with `MRMediaRemoteSendCommand` directly. Private framework: if a macOS update breaks it, reps still run, just without pausing. Known gap: if the app crashes mid-rep, the media it paused stays paused.
+State in `~/.local/state/`: `ancla.json` (schedule + counters), `ancla-log.csv` (one row per rep), `ancla-events.log` (diagnostics), `ancla-mission.txt`. No dependencies beyond Xcode Command Line Tools.
 
-State in `~/.local/state/`: `ancla.json` (schedule + counters), `ancla-log.csv` (one row per rep: time, mode, completo / cerrado con esc|clic a los Ns), `ancla-events.log` (diagnostics), `ancla-mission.txt`.
-
-No permissions, no dependencies.
+**Media control caveat:** since macOS 15.4, the private MediaRemote framework no longer reports playback state to third-party apps, so `Media.swift` reads it through Apple's own `osascript` (JXA, ~60 ms) and sends pause/play with `MRMediaRemoteSendCommand` directly. If a macOS update breaks this, reps still run — just without pausing. Known gap: a crash mid-rep leaves the media it paused paused.
 
 ## Install
 
+Requires macOS 13+ and [Xcode Command Line Tools](https://developer.apple.com/xcode/) (`xcode-select --install`). No other dependencies.
+
 ```bash
-./install.sh     # build, install to ~/.local/bin, load the LaunchAgent; safe to rerun
-./build.sh       # build only → build/Ancla.app
+git clone https://github.com/lout33/ancla.git
+cd ancla
+./install.sh      # build, install to ~/.local/bin, start the LaunchAgent; safe to rerun
 ```
 
-`install.sh` retires the v1 pieces (script metronome `com.pepe.movement`, separate `AnclaBar`) by moving them to `~/.local/state/ancla-retired/` — never deletes. v1 sources are kept in `legacy/`.
+```bash
+./build.sh        # build only → build/Ancla.app
+./test.sh         # rule checks for the scheduling logic
+./uninstall.sh    # stop and remove (keeps your data; --purge deletes it too)
+```
 
-## Design principles
+## Contributing
+
+Issues and PRs welcome. The codebase is five small Swift files with no build system to install — `swiftc` via `./build.sh` is the whole pipeline, and `./test.sh` checks the scheduling rules. Design-wise, three constraints are load-bearing:
 
 1. **The circle is the instruction.** Words compete with the breath; the breath is the interface.
-2. **No autoregulation — pre-decisions.** The moment only executes what calm-you decided. (Same law as the fleet: Luis-discipline dies, systems survive.)
-3. **System-fired, not Luis-discipline.** The metronome lives in launchd, not in memory or motivation.
-4. **Prompt fading.** Every 6th rep is unguided; success metric = the app stops being needed.
-5. **Rejection list:** sound design, phone sync, dashboards, "smart" timing — system-building costumes.
+2. **No autoregulation — pre-decisions.** The moment only executes what calm-you decided.
+3. **Rejection list:** sound design, phone sync, dashboards, "smart" timing — system-building costumes.
+
+If a change fights those, it probably belongs in a fork, and that's fine too.
 
 ## History
 
-- **v1 (2026-09-20)** — bash metronome under launchd + separate overlay app + separate menu bar app. Built as the regulation layer for the romance two-clocks work (see `../../projects/people/practice/romance-fundamentals.md`).
-- **2026-09-21 → 09-27** — commit `65fb2f1` dropped the view stack from the hierarchy; every overlay crashed at launch for 6 days while the log, counter and streak still counted each one. Nobody could tell. Fixed in `e3d20f1`.
-- **v2 (2026-09-27)** — one menu bar app that owns the cadence, counts only what reached the screen, waits for you instead of skipping, and makes failures visible.
+Built 2026-09-20 as a personal regulation practice: the body rep merged a pre-existing stand-up habit, and the breath rep carries an anchor chain for showing up calm with people. A week into using it, every rep since a small refactor had been crashing at launch while the log, counter and streak still counted each one — 15 crash reports matched 15 logged "reps", a perfect phantom streak nobody could see. That failure became the design brief for v2: count only what reached the screen, wait instead of skip, and make every failure loud.
+
+## License
+
+[MIT](LICENSE)

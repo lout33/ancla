@@ -41,27 +41,27 @@ final class MenuBar: NSObject, NSMenuDelegate {
         menu.addItem(info(StatusText.summary(s)))
         menu.addItem(info(StatusText.schedule(s, showing: scheduler.showing, away: Presence.away)))
         if let failure = s.lastFailure {
-            menu.addItem(action("⚠︎ \(failure) — descartar aviso", #selector(clearFailure)))
+            menu.addItem(action("⚠︎ \(failure) — dismiss", #selector(clearFailure)))
         }
         menu.addItem(.separator())
 
-        menu.addItem(action("Fuego ahora", #selector(fireNow)))
+        menu.addItem(action("Fire now", #selector(fireNow)))
         if s.isPaused {
-            menu.addItem(action("Reanudar", #selector(resume)))
+            menu.addItem(action("Resume", #selector(resume)))
         } else {
-            let pause = NSMenuItem(title: "Pausar", action: nil, keyEquivalent: "")
+            let pause = NSMenuItem(title: "Pause", action: nil, keyEquivalent: "")
             let sub = NSMenu()
             sub.autoenablesItems = false
             sub.addItem(pauseItem("30 min", minutes: 30))
-            sub.addItem(pauseItem("1 hora", minutes: 60))
-            sub.addItem(pauseItem("2 horas", minutes: 120))
-            sub.addItem(pauseItem("hasta mañana (\(Day.time(Day.tomorrowMorning())))", minutes: -1))
-            sub.addItem(pauseItem("hasta que reanude", minutes: -2))
+            sub.addItem(pauseItem("1 hour", minutes: 60))
+            sub.addItem(pauseItem("2 hours", minutes: 120))
+            sub.addItem(pauseItem("until tomorrow (\(Day.time(Day.tomorrowMorning())))", minutes: -1))
+            sub.addItem(pauseItem("until I resume", minutes: -2))
             pause.submenu = sub
             menu.addItem(pause)
         }
 
-        let rhythm = NSMenuItem(title: "Ritmo", action: nil, keyEquivalent: "")
+        let rhythm = NSMenuItem(title: "Rhythm", action: nil, keyEquivalent: "")
         let rsub = NSMenu()
         rsub.autoenablesItems = false
         for r in Rhythm.allCases {
@@ -75,12 +75,12 @@ final class MenuBar: NSObject, NSMenuDelegate {
         menu.addItem(.separator())
 
         let mission = store.mission
-        menu.addItem(action(mission.isEmpty ? "Misión de hoy…" : "Misión: \(truncate(mission, 40))",
+        menu.addItem(action(mission.isEmpty ? "Today's mission…" : "Mission: \(truncate(mission, 40))",
                             #selector(editMission)))
-        menu.addItem(action("Ver log de reps", #selector(openRepLog)))
-        menu.addItem(action("Ver eventos (diagnóstico)", #selector(openEvents)))
+        menu.addItem(action("View rep log", #selector(openRepLog)))
+        menu.addItem(action("View events (diagnostics)", #selector(openEvents)))
         menu.addItem(.separator())
-        menu.addItem(action("Salir de Ancla", #selector(quit)))
+        menu.addItem(action("Quit Ancla", #selector(quit)))
     }
 
     // MARK: - Items
@@ -128,14 +128,14 @@ final class MenuBar: NSObject, NSMenuDelegate {
 
     @objc private func editMission() {
         let alert = NSAlert()
-        alert.messageText = "Misión de hoy"
-        alert.informativeText = "Sale en el próximo rep. Déjala vacía para no mostrar misión."
+        alert.messageText = "Today's mission"
+        alert.informativeText = "Shows on the next rep. Leave empty to skip missions."
         let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 380, height: 24))
         field.stringValue = store.mission
-        field.placeholderString = "una línea — lo que calm-you ya decidió"
+        field.placeholderString = "one line — what calm-you already decided"
         alert.accessoryView = field
-        alert.addButton(withTitle: "Guardar")
-        alert.addButton(withTitle: "Cancelar")
+        alert.addButton(withTitle: "Save")
+        alert.addButton(withTitle: "Cancel")
         alert.window.initialFirstResponder = field
         NSApp.activate(ignoringOtherApps: true)
         if alert.runModal() == .alertFirstButtonReturn {

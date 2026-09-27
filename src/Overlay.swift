@@ -9,8 +9,8 @@ enum OverlayOutcome {
 
     var logValue: String {
         switch self {
-        case .completed: return "completo"
-        case .dismissed(let t, let by): return "cerrado con \(by) a los \(Int(t))s"
+        case .completed: return "completed"
+        case .dismissed(let t, let by): return "closed with \(by) at \(Int(t))s"
         }
     }
 }
@@ -61,7 +61,7 @@ final class Overlay {
     /// Set when this rep paused someone's media; resumed on finish.
     private(set) var pausedMedia: Media.NowPlaying?
 
-    private let phaseTitle = NSTextField(labelWithString: "presiona")
+    private let phaseTitle = NSTextField(labelWithString: "press")
     private let circle = NSView()
     private var circleWidth: NSLayoutConstraint?
     private var circleHeight: NSLayoutConstraint?
@@ -111,13 +111,13 @@ final class Overlay {
             return nil
         }) { monitors.append(m) }
         if let m = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown], handler: { [weak self] _ in
-            self?.dismiss(by: "clic")
+            self?.dismiss(by: "click")
             return nil
         }) { monitors.append(m) }
     }
 
     /// Ends the rep early, e.g. when quitting the app mid-rep.
-    func cancel() { finish(.dismissed(after: Date().timeIntervalSince(start), by: "salir")) }
+    func cancel() { finish(.dismissed(after: Date().timeIntervalSince(start), by: "quit")) }
 
     private func dismiss(by: String) {
         let elapsed = Date().timeIntervalSince(start)
@@ -172,12 +172,12 @@ final class Overlay {
     private func buildContent(in view: NSView) {
         let meta = label(content.meta,
                          font: .monospacedDigitSystemFont(ofSize: 14, weight: .medium), color: Overlay.dim)
-        let hint = label("ESC o clic cierra", font: .systemFont(ofSize: 14), color: Overlay.dim)
+        let hint = label("ESC or click closes", font: .systemFont(ofSize: 14), color: Overlay.dim)
 
         let bodyText: String
         switch content.mode {
-        case "change": bodyText = "🔄 cambia posición — desmonta las caderas"
-        case "stand": bodyText = "🧍 párate — 10 pasos y hombros"
+        case "change": bodyText = "🔄 change position — unstick the hips"
+        case "stand": bodyText = "🧍 stand — 10 steps + shoulders"
         case "mission": bodyText = content.mission
         default: bodyText = ""
         }
@@ -213,7 +213,7 @@ final class Overlay {
         icons.font = .systemFont(ofSize: 38)
         icons.alignment = .center
 
-        if !guided { phaseTitle.stringValue = "haz el ciclo — tú diriges" }
+        if !guided { phaseTitle.stringValue = "run the cycle — you lead" }
 
         let stack = NSStackView()
         stack.orientation = .vertical
@@ -225,7 +225,7 @@ final class Overlay {
         stack.addArrangedSubview(circle)
         stack.addArrangedSubview(icons)
 
-        let intentionTitle = NSTextField(labelWithString: "intención")
+        let intentionTitle = NSTextField(labelWithString: "intention")
         intentionTitle.font = .systemFont(ofSize: 14, weight: .medium)
         intentionTitle.textColor = Overlay.dim
         let intention = NSTextField(labelWithString: content.intention)
@@ -263,7 +263,7 @@ final class Overlay {
     }
 
     // MARK: - Timeline
-    // presiona 0–2.5 · exhala 2.5–9.5 (deflate) · ensancha 9.5–12.5 (expand) · gente, lento 12.5–15
+    /// press 0–2.5 · exhale 2.5–9.5 (deflate) · widen 9.5–12.5 (expand) · people, slow 12.5–15
 
     private func setCircle(_ size: CGFloat) {
         circleWidth?.constant = size
@@ -278,18 +278,18 @@ final class Overlay {
 
         let span = Overlay.circleMax - Overlay.circleMin
         if t < 2.5 {
-            phaseTitle.stringValue = "presiona"
+            phaseTitle.stringValue = "press"
             setCircle(Overlay.circleMin + span * 0.25)
         } else if t < 9.5 {
-            phaseTitle.stringValue = "exhala"
+            phaseTitle.stringValue = "exhale"
             setCircle(Overlay.circleMax - span * CGFloat((t - 2.5) / 7.0))
         } else if t < 12.5 {
             let p = CGFloat((t - 9.5) / 3.0)
-            phaseTitle.stringValue = "ensancha"
+            phaseTitle.stringValue = "widen"
             setCircle(Overlay.circleMin + span * p)
             field.alphaValue = 0.85 * p
         } else {
-            phaseTitle.stringValue = "gente, lento"
+            phaseTitle.stringValue = "people, slow"
             field.alphaValue = 0.85 * max(0, 1 - CGFloat((t - 12.5) / 2.5))
         }
     }

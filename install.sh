@@ -86,6 +86,6 @@ sleep 1
 echo "installed ✓"
 "$BIN/ancla" status || true
 echo
-echo "  menu bar ⚓ → fuego ahora · pausar · ritmo · misión · logs"
+echo "  menu bar ⚓ → fire now · pause · rhythm · mission · logs"
 echo "  cli:         ancla fire | ancla preview [mode] | ancla status"
 echo "  diagnostics: $STATE/ancla-events.log"

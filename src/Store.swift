@@ -23,9 +23,9 @@ enum Rhythm: String, Codable, CaseIterable {
 
     var label: String {
         switch self {
-        case .short: return "corto (15–25 min)"
+        case .short: return "short (15–25 min)"
         case .normal: return "normal (20–40 min)"
-        case .long: return "largo (40–60 min)"
+        case .long: return "long (40–60 min)"
         }
     }
 

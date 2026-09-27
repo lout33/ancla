@@ -20,26 +20,26 @@ enum StatusText {
     static func ago(_ date: Date?, now: Date = Date()) -> String {
         guard let date else { return "—" }
         let m = Int(now.timeIntervalSince(date) / 60)
-        if m < 1 { return "ahora" }
-        if m < 60 { return "hace \(m) min" }
-        if m < 24 * 60 { return "hace \(m / 60) h" }
-        return "hace \(m / (24 * 60)) d"
+        if m < 1 { return "just now" }
+        if m < 60 { return "\(m) min ago" }
+        if m < 24 * 60 { return "\(m / 60) h ago" }
+        return "\(m / (24 * 60)) d ago"
     }
 
     static func schedule(_ s: AnclaState, showing: Bool, away: Bool, now: Date = Date()) -> String {
-        if showing { return "rep en curso" }
+        if showing { return "rep in progress" }
         if let p = s.pausedUntil, p > now {
-            if p == .distantFuture { return "pausado — hasta que reanudes" }
+            if p == .distantFuture { return "paused — until you resume" }
             let sameDay = Day.key(p) == Day.key(now)
-            return "pausado hasta las \(Day.time(p))\(sameDay ? "" : " (mañana)")"
+            return "paused until \(Day.time(p))\(sameDay ? "" : " (tomorrow)")"
         }
-        if now >= s.nextDue { return away ? "rep pendiente — sale cuando vuelvas" : "rep a punto" }
+        if now >= s.nextDue { return away ? "rep due — fires when you're back" : "rep due now" }
         let mins = Int((s.nextDue.timeIntervalSince(now) / 60).rounded(.up))
-        return "próximo rep: en ~\(mins) min"
+        return "next rep: in ~\(mins) min"
     }
 
     static func summary(_ s: AnclaState, now: Date = Date()) -> String {
-        "último rep: \(ago(s.lastRep, now: now)) · hoy \(s.repsShownToday(now: now)) · racha \(s.currentStreak(now: now))d"
+        "last rep: \(ago(s.lastRep, now: now)) · today \(s.repsShownToday(now: now)) · streak \(s.currentStreak(now: now))d"
     }
 }
 
@@ -66,7 +66,7 @@ final class Scheduler {
         if let t = store.state.overlayInFlight {
             // A crash-looping overlay must not refire every few seconds, so
             // the next attempt waits a full interval.
-            let message = "el rep de las \(Day.time(t)) se cayó antes de terminar"
+            let message = "the \(Day.time(t)) rep died before finishing"
             store.update {
                 $0.overlayInFlight = nil
                 $0.lastFailure = message
@@ -145,7 +145,7 @@ final class Scheduler {
 
         guard ov.isOnScreen else {
             overlay = nil
-            let message = "el overlay no apareció a las \(Day.time(now))"
+            let message = "the overlay did not appear at \(Day.time(now))"
             store.update {
                 $0.overlayInFlight = nil
                 $0.lastFailure = message

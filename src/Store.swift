@@ -7,6 +7,8 @@ enum Paths {
     static let events = stateDir + "/ancla-events.log"
     static let mission = stateDir + "/ancla-mission.txt"
     static let lock = stateDir + "/ancla.lock"
+    static let practice = stateDir + "/ancla-practice.csv"
+    static let ifThens = stateDir + "/ancla-ifthens.txt"
 }
 
 enum Rhythm: String, Codable, CaseIterable {
@@ -32,7 +34,7 @@ enum Rhythm: String, Codable, CaseIterable {
     func randomInterval() -> TimeInterval { Double.random(in: range) * 60 }
 }
 
-struct AnclaState: Codable {
+struct AnclaState: Codable, Equatable {
     var nextDue = Date()
     /// nil = running. Date.distantFuture = paused until manually resumed.
     var pausedUntil: Date?
@@ -49,6 +51,14 @@ struct AnclaState: Codable {
     /// still set at startup, the previous process died mid-rep.
     var overlayInFlight: Date?
     var lastFailure: String?
+    /// Sits are off until switched on in the menu.
+    var sitsEnabled = false
+    /// Sit-day keys (see Sit.dayKey) of the last morning and night sit shown or missed.
+    var sitDoneMorning: String?
+    var sitDoneNight: String?
+    /// "morning" | "night" while a sit is due and waiting for you.
+    var sitPending: String?
+    var sitPendingSince: Date?
 
     init() {}
 
@@ -69,6 +79,11 @@ struct AnclaState: Codable {
         rhythm = (try? c.decodeIfPresent(Rhythm.self, forKey: .rhythm)) ?? d.rhythm
         overlayInFlight = try? c.decodeIfPresent(Date.self, forKey: .overlayInFlight)
         lastFailure = try? c.decodeIfPresent(String.self, forKey: .lastFailure)
+        sitsEnabled = (try? c.decodeIfPresent(Bool.self, forKey: .sitsEnabled)) ?? d.sitsEnabled
+        sitDoneMorning = try? c.decodeIfPresent(String.self, forKey: .sitDoneMorning)
+        sitDoneNight = try? c.decodeIfPresent(String.self, forKey: .sitDoneNight)
+        sitPending = try? c.decodeIfPresent(String.self, forKey: .sitPending)
+        sitPendingSince = try? c.decodeIfPresent(Date.self, forKey: .sitPendingSince)
     }
 
     var isPaused: Bool { pausedUntil.map { $0 > Date() } ?? false }
@@ -107,6 +122,7 @@ enum Day {
     static func key(_ date: Date) -> String { formatter.string(from: date) }
     static func time(_ date: Date) -> String { clock.string(from: date) }
     static func stampString(_ date: Date) -> String { stamp.string(from: date) }
+    static func parseStamp(_ text: String) -> Date? { stamp.date(from: text) }
     static func yesterday(_ date: Date) -> Date {
         Calendar.current.date(byAdding: .day, value: -1, to: date) ?? date
     }
@@ -212,6 +228,15 @@ enum Log {
         append("\(Day.stampString(date)),\(mode),\(outcome)\n", to: Paths.repLog)
     }
 
+    /// One line per practice entry (sit, training, live rep). The text field is
+    /// quoted so a comma or quote in what you typed cannot break the CSV.
+    static func practice(kind: String, text: String, at date: Date = Date()) {
+        if !FileManager.default.fileExists(atPath: Paths.practice) {
+            append("date,kind,text\n", to: Paths.practice)
+        }
+        append("\(Day.stampString(date)),\(kind),\(Practice.csvField(text))\n", to: Paths.practice)
+    }
+
     private static func append(_ line: String, to path: String) {
         let data = Data(line.utf8)
         if let h = FileHandle(forWritingAtPath: path) {
@@ -228,5 +253,43 @@ enum Log {
               let size = attrs[.size] as? Int, size > maxEventBytes,
               let data = FileManager.default.contents(atPath: Paths.events) else { return }
         try? data.suffix(maxEventBytes / 2).write(to: URL(fileURLWithPath: Paths.events), options: .atomic)
+    }
+}
+
+/// The practice log (sits, training, live reps) and the if-then lines that
+/// ride each rep. Personal practice data stays in ~/.local/state, never in
+/// the repo.
+enum Practice {
+    static func csvField(_ text: String) -> String {
+        "\"" + text.replacingOccurrences(of: "\"", with: "\"\"") + "\""
+    }
+
+    /// One if-then per line in ancla-ifthens.txt; reps rotate through them.
+    static func ifThens(path: String = Paths.ifThens) -> [String] {
+        guard let d = FileManager.default.contents(atPath: path),
+              let s = String(data: d, encoding: .utf8) else { return [] }
+        return s.split(separator: "\n", omittingEmptySubsequences: true)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
+
+    /// Entries of one kind since Monday 00:00, for the menu and `ancla status`.
+    static func weekCount(kind: String, containing: String? = nil,
+                          path: String = Paths.practice, now: Date = Date()) -> Int {
+        guard let d = FileManager.default.contents(atPath: path),
+              let text = String(data: d, encoding: .utf8) else { return 0 }
+        var cal = Calendar.current
+        cal.firstWeekday = 2
+        guard let weekStart = cal.dateInterval(of: .weekOfYear, for: now)?.start else { return 0 }
+        var count = 0
+        for line in text.split(separator: "\n") {
+            let cols = line.split(separator: ",", maxSplits: 2)
+            guard cols.count == 3, cols[1] == Substring(kind),
+                  let date = Day.parseStamp(String(cols[0])),
+                  date >= weekStart, date <= now,
+                  containing.map({ cols[2].contains($0) }) ?? true else { continue }
+            count += 1
+        }
+        return count
     }
 }

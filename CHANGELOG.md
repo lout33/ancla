@@ -3,6 +3,23 @@
 All notable changes to Ancla are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+- Optional morning + night 5-minute sits (off by default): breathing circle,
+  space to mark a return, one word at the end. Morning = first return after
+  5 h or more away (05:00–14:00); night = 00:30, waits until 02:00; misses
+  are logged, never fired late.
+- Practice log (`~/.local/state/ancla-practice.csv`): sits, training, live
+  reps. Menu: Log ▸ training…, live rep…, view; training-this-week line.
+- If-then lines (`~/.local/state/ancla-ifthens.txt`) rotate through reps as
+  the intention, titled "practice".
+- CLI: `ancla sit`, `ancla sits on|off`, `ancla rhythm`, `ancla log`.
+
+### Changed
+- Clicks close a rep only after 5 s (ESC still 1.5 s): in practice most reps
+  were closed by a reflex click within 2 s.
+
 ## [2.0] — 2026-09-27
 
 A complete re-architecture: one menu bar app owns the cadence end to end.

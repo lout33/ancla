@@ -30,13 +30,26 @@ The exhale + peripheral-widen is the antidote to tunnel-vision fixation; the thu
 
 Every rep also shows one **intention**, picked at random for now: *understand · connect · express clearly · set a boundary · enjoy the moment*. And it pauses whatever you're watching or listening to (Music, Spotify, YouTube in a browser — anything in macOS Now Playing), resuming it when the rep ends. Media you paused yourself stays paused.
 
+## Sits and practice log (optional, off by default)
+
+Switch on **Morning + night sits** in the menu (or `ancla sits on`) for two 5-minute sits a day tied to your day, not to the clock alone:
+
+- **Morning:** the first time you come back after at least 5 h away, between 05:00 and 14:00 (fires 90 s after you're back).
+- **Night:** 00:30, waits while you're away until 02:00. The sit day rolls over at 03:00.
+- A slot you miss is logged as missed, never fired at a wrong moment.
+
+A sit is a full-screen circle that breathes 4 s in, 6 s out. Press **space** each time you notice you drifted and came back, and type **one word** in the last 30 s. ESC ends it early; stray clicks are ignored. Each sit lands in the practice log with its returns and word.
+
+Put if-then lines in `~/.local/state/ancla-ifthens.txt` (one per line); reps rotate through them as the intention, titled "practice". **Log ▸ training… / live rep…** (or `ancla log training|live <text>`) append to `~/.local/state/ancla-practice.csv`; the menu shows training this week against a floor of 2. Everything stays on your machine.
+
 ## Using it
 
 Everything lives in the **⚓ menu bar item**:
 
 - **Title** — `⚓ 12m` minutes since the last real rep · `⚓ ‖` paused · `⚓ !` something failed (open the menu to see what)
 - **Status lines** — last rep, reps today, streak, and when the next rep is due (or *"fires when you're back"* if one is waiting for you)
-- **Fire now** — a rep right now
+- **Fire now** — a rep right now · **Sit now (5 min)**
+- **Morning + night sits** — toggle · **Log ▸** training, live rep, practice log
 - **Pause ▸** 30 min · 1 hour · 2 hours · until tomorrow (8:00) · until I resume — resumes by itself, survives restarts
 - **Rhythm ▸** short 15–25 · normal 20–40 · long 40–60 min
 - **Today's mission…** — type one line; it rides the next rep
@@ -48,10 +61,14 @@ CLI (for agents and testing):
 ```bash
 ancla status                  # schedule, counters, failures; exit 1 if the app isn't running
 ancla fire                    # rep now in the running app
-ancla preview [mode] [text]   # one overlay, touches no state
+ancla preview [mode] [text]   # one overlay, touches no state (mode sit: ANCLA_SIT_SECONDS=20 shortens it)
+ancla sit                     # 5-minute sit now
+ancla sits on|off             # morning + night sits
+ancla rhythm short|normal|long
+ancla log training|live <text>
 ```
 
-On the overlay: **ESC or click** closes it (ignored for the first 1.5 s, so a click already in flight doesn't kill the rep). Focus returns to the app you were in.
+On the overlay: **ESC** closes it (ignored for the first 1.5 s); a **click** closes it only after 5 s, because most early clicks were reflexes, not decisions. Focus returns to the app you were in.
 
 ## Why another break app
 

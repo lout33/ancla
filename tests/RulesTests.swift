@@ -12,8 +12,8 @@ struct RulesTests {
         }
 
         let cal = Calendar.current
-        func at(_ y: Int, _ mo: Int, _ d: Int, _ h: Int) -> Date {
-            cal.date(from: DateComponents(year: y, month: mo, day: d, hour: h))!
+        func at(_ y: Int, _ mo: Int, _ d: Int, _ h: Int, _ min: Int = 0) -> Date {
+            cal.date(from: DateComponents(year: y, month: mo, day: d, hour: h, minute: min))!
         }
         let day0 = at(2026, 9, 27, 12)
 
@@ -70,6 +70,78 @@ struct RulesTests {
                 check(rhythm.range.contains(minutes), "rhythm \(rhythm.rawValue) out of range")
             }
         }
+
+        // Sit day rolls over at 03:00, so the 00:30 night sit belongs to the day ending.
+        check(Sit.dayKey(at(2026, 10, 2, 0, 45)) == "2026-10-01", "00:45 is still yesterday's sit day")
+        check(Sit.dayKey(at(2026, 10, 2, 3)) == "2026-10-02", "03:00 starts a new sit day")
+
+        // Night window 00:30–02:00, once per sit day, missed at 02:00.
+        var ns = AnclaState()
+        check(!Sit.nightDue(ns, now: at(2026, 10, 2, 0, 29)), "night sit not before 00:30")
+        check(Sit.nightDue(ns, now: at(2026, 10, 2, 0, 30)), "night sit due at 00:30")
+        check(Sit.nightDue(ns, now: at(2026, 10, 2, 1, 59)), "night sit still due at 01:59")
+        check(!Sit.nightDue(ns, now: at(2026, 10, 2, 2)), "night window closed at 02:00")
+        check(Sit.nightMissed(ns, now: at(2026, 10, 2, 2, 5)), "night sit missed at 02:00")
+        ns.sitDoneNight = "2026-10-01"
+        check(!Sit.nightDue(ns, now: at(2026, 10, 2, 1)), "night sit done for the day")
+        check(!Sit.nightMissed(ns, now: at(2026, 10, 2, 2, 5)), "done night sit is not missed")
+        check(Sit.nightDue(ns, now: at(2026, 10, 3, 0, 40)), "night sit due again the next night")
+
+        // Morning window 05:00–14:00; missed after 14:00 or past midnight.
+        var ms = AnclaState()
+        check(!Sit.morningWindowOpen(now: at(2026, 10, 2, 4, 59)), "no morning sit before 05:00")
+        check(Sit.morningWindowOpen(now: at(2026, 10, 2, 7, 31)), "morning window open at 07:31")
+        check(!Sit.morningWindowOpen(now: at(2026, 10, 2, 14)), "morning window closed at 14:00")
+        check(!Sit.morningMissed(ms, now: at(2026, 10, 2, 11)), "not missed inside the window")
+        check(Sit.morningMissed(ms, now: at(2026, 10, 2, 14, 1)), "missed after 14:00")
+        check(Sit.morningMissed(ms, now: at(2026, 10, 3, 1)), "missed past midnight for the day ending")
+        ms.sitDoneMorning = "2026-10-02"
+        check(!Sit.morningMissed(ms, now: at(2026, 10, 2, 15)), "done morning sit is not missed")
+        check(!Sit.morningMissed(ms, now: at(2026, 10, 3, 1)), "done morning sit is not missed past midnight")
+        var late = AnclaState()
+        Sit.closePassedSlots(&late, now: at(2026, 10, 1, 23, 15))
+        check(late.sitDoneMorning == "2026-10-01" && late.sitDoneNight == nil,
+              "switching on at 23:15 closes the morning, keeps tonight's sit")
+        var early = AnclaState()
+        Sit.closePassedSlots(&early, now: at(2026, 10, 2, 8))
+        check(early.sitDoneMorning == nil, "switching on at 08:00 keeps the morning sit")
+        check(Sit.pendingWindowOpen("manual", now: at(2026, 10, 2, 16)), "manual sits have no window")
+
+        // If-thens rotate across reps; no file means random intentions.
+        let lines = ["a", "b"]
+        check(Scheduler.intention(ifThens: [], rep: 3) == nil, "no if-thens → nil")
+        check((1...4).map { Scheduler.intention(ifThens: lines, rep: $0)! } == ["a", "b", "a", "b"],
+              "if-thens rotate")
+        check(Scheduler.intention(ifThens: lines, rep: 0) == "b", "rep 0 does not crash")
+
+        // Practice CSV: the text field survives commas and quotes.
+        check(Practice.csvField(#"run, 30 "min""#) == #""run, 30 ""min""""#, "csv quoting")
+
+        // Weekly count starts Monday 00:00 and filters by kind.
+        let tmp = NSTemporaryDirectory() + "ancla-practice-test-\(getpid()).csv"
+        try! """
+        date,kind,text
+        2026-09-27 10:00:00,training,"sunday, last week"
+        2026-09-28 00:10:00,training,"monday"
+        2026-09-30 18:00:00,training,"run, 30 min"
+        2026-09-30 19:00:00,live,"one sincere line"
+        2026-10-01 08:00:00,sit,"morning completed"
+        2026-10-09 08:00:00,training,"future"
+        """.write(toFile: tmp, atomically: true, encoding: .utf8)
+        let thursday = at(2026, 10, 1, 12)
+        check(Practice.weekCount(kind: "training", path: tmp, now: thursday) == 2, "training this week")
+        check(Practice.weekCount(kind: "live", path: tmp, now: thursday) == 1, "live reps this week")
+        check(Practice.weekCount(kind: "sit", containing: "completed", path: tmp, now: thursday) == 1,
+              "completed sits this week")
+        check(Practice.weekCount(kind: "sit", containing: "missed", path: tmp, now: thursday) == 0,
+              "text filter")
+        check(Practice.weekCount(kind: "training", path: tmp + ".missing", now: thursday) == 0, "missing file → 0")
+        try? FileManager.default.removeItem(atPath: tmp)
+
+        let ifPath = NSTemporaryDirectory() + "ancla-ifthens-test-\(getpid()).txt"
+        try! "  first → do x  \n\n second\n".write(toFile: ifPath, atomically: true, encoding: .utf8)
+        check(Practice.ifThens(path: ifPath) == ["first → do x", "second"], "if-thens file parsing")
+        try? FileManager.default.removeItem(atPath: ifPath)
 
         if failures == 0 {
             print("all rule checks passed")

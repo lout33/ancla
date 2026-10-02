@@ -40,12 +40,15 @@ final class MenuBar: NSObject, NSMenuDelegate {
 
         menu.addItem(info(StatusText.summary(s)))
         menu.addItem(info(StatusText.schedule(s, showing: scheduler.showing, away: Presence.away)))
+        if s.sitsEnabled { menu.addItem(info("sits: " + StatusText.sits(s))) }
+        menu.addItem(info(StatusText.training()))
         if let failure = s.lastFailure {
             menu.addItem(action("⚠︎ \(failure) — dismiss", #selector(clearFailure)))
         }
         menu.addItem(.separator())
 
         menu.addItem(action("Fire now", #selector(fireNow)))
+        menu.addItem(action("Sit now (5 min)", #selector(sitNow)))
         if s.isPaused {
             menu.addItem(action("Resume", #selector(resume)))
         } else {
@@ -72,7 +75,20 @@ final class MenuBar: NSObject, NSMenuDelegate {
         }
         rhythm.submenu = rsub
         menu.addItem(rhythm)
+        let sits = action("Morning + night sits", #selector(toggleSits))
+        sits.state = s.sitsEnabled ? .on : .off
+        menu.addItem(sits)
         menu.addItem(.separator())
+
+        let log = NSMenuItem(title: "Log", action: nil, keyEquivalent: "")
+        let lsub = NSMenu()
+        lsub.autoenablesItems = false
+        lsub.addItem(logItem("training…", kind: "training"))
+        lsub.addItem(logItem("live rep…", kind: "live"))
+        lsub.addItem(.separator())
+        lsub.addItem(action("View practice log", #selector(openPracticeLog)))
+        log.submenu = lsub
+        menu.addItem(log)
 
         let mission = store.mission
         menu.addItem(action(mission.isEmpty ? "Today's mission…" : "Mission: \(truncate(mission, 40))",
@@ -103,6 +119,12 @@ final class MenuBar: NSObject, NSMenuDelegate {
         return mi
     }
 
+    private func logItem(_ title: String, kind: String) -> NSMenuItem {
+        let mi = action(title, #selector(logEntry(_:)))
+        mi.representedObject = kind
+        return mi
+    }
+
     private func truncate(_ s: String, _ n: Int) -> String {
         s.count > n ? String(s.prefix(n)) + "…" : s
     }
@@ -110,6 +132,8 @@ final class MenuBar: NSObject, NSMenuDelegate {
     // MARK: - Actions
 
     @objc private func fireNow() { scheduler.fire(reason: "menu") }
+    @objc private func sitNow() { scheduler.sitNow() }
+    @objc private func toggleSits() { scheduler.setSitsEnabled(!store.state.sitsEnabled) }
     @objc private func resume() { scheduler.resume() }
     @objc private func clearFailure() { scheduler.clearFailure() }
 
@@ -144,6 +168,28 @@ final class MenuBar: NSObject, NSMenuDelegate {
         }
     }
 
+    @objc private func logEntry(_ sender: NSMenuItem) {
+        guard let kind = sender.representedObject as? String else { return }
+        let alert = NSAlert()
+        alert.messageText = kind == "training" ? "Log training" : "Log a live rep"
+        alert.informativeText = kind == "training"
+            ? "What you did, e.g. \"run 30 min\" or \"push-ups 3×12\"."
+            : "A moment you caught a pattern with a real person: what fired, what you did."
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 380, height: 24))
+        field.placeholderString = kind == "training" ? "run 30 min" : "laughed it off → said one sincere line"
+        alert.accessoryView = field
+        alert.addButton(withTitle: "Log")
+        alert.addButton(withTitle: "Cancel")
+        alert.window.initialFirstResponder = field
+        NSApp.activate(ignoringOtherApps: true)
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        let entry = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !entry.isEmpty else { return }
+        Log.practice(kind: kind, text: entry)
+        Log.event("logged \(kind): \(entry)")
+    }
+
+    @objc private func openPracticeLog() { open(Paths.practice) }
     @objc private func openRepLog() { open(Paths.repLog) }
     @objc private func openEvents() { open(Paths.events) }
 

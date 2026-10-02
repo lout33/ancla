@@ -83,6 +83,7 @@ final class Overlay {
     private let field = NSTextField(labelWithString: "💚  💚  💚  💚  💚  💚\n  🌲    🌲    🌲    🌲\n💚  💚  💚  💚  💚  💚")
 
     private let hint = NSTextField(labelWithString: "")
+    private let clock = NSTextField(labelWithString: "")
     private let returnsLabel = NSTextField(labelWithString: "")
     private let wordPrompt = NSTextField(labelWithString: "what's here? one word")
     private let wordField = NSTextField(string: "")
@@ -265,6 +266,7 @@ final class Overlay {
         view.addSubview(stack)
         view.addSubview(meta)
         view.addSubview(hint)
+        addClock(to: view)
 
         NSLayoutConstraint.activate([
             w, h,
@@ -280,6 +282,25 @@ final class Overlay {
             hint.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -28),
             hint.topAnchor.constraint(equalTo: view.topAnchor, constant: 24),
         ])
+    }
+
+    /// Time left, top centre, so a rep or sit never leaves you guessing how long it lasts.
+    private func addClock(to view: NSView) {
+        clock.font = .monospacedDigitSystemFont(ofSize: 40, weight: .semibold)
+        clock.textColor = NSColor(red: 0.85, green: 0.80, blue: 0.70, alpha: 1)
+        clock.alignment = .center
+        clock.translatesAutoresizingMaskIntoConstraints = false
+        clock.stringValue = Overlay.clockText(length)
+        view.addSubview(clock)
+        NSLayoutConstraint.activate([
+            clock.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            clock.topAnchor.constraint(equalTo: view.topAnchor, constant: 40),
+        ])
+    }
+
+    static func clockText(_ remaining: TimeInterval) -> String {
+        let n = Int(max(0, remaining).rounded(.up))
+        return String(format: "%d:%02d", n / 60, n % 60)
     }
 
     private func markReturn() {
@@ -365,6 +386,7 @@ final class Overlay {
         view.addSubview(stack)
         view.addSubview(meta)
         view.addSubview(hint)
+        addClock(to: view)
 
         NSLayoutConstraint.activate([
             w, h,
@@ -392,6 +414,7 @@ final class Overlay {
     private func tick() {
         let t = Date().timeIntervalSince(start)
         if t >= length { finish(.completed); return }
+        clock.stringValue = Overlay.clockText(length - t)
         if isSit { sitTick(t); return }
         guard guided else { return }
 

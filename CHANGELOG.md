@@ -14,6 +14,7 @@ All notable changes to Ancla are documented here. The format follows
   reps. Menu: Log ▸ training…, live rep…, view; training-this-week line.
 - If-then lines (`~/.local/state/ancla-ifthens.txt`) rotate through reps as
   the intention, titled "practice".
+- Countdown clock at the top of every rep and sit.
 - CLI: `ancla sit`, `ancla sits on|off`, `ancla rhythm`, `ancla log`.
 
 ### Changed

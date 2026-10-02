@@ -143,6 +143,12 @@ struct RulesTests {
         check(Practice.ifThens(path: ifPath) == ["first → do x", "second"], "if-thens file parsing")
         try? FileManager.default.removeItem(atPath: ifPath)
 
+        // Overlay clock: counts down whole seconds, rounding up, never negative.
+        check(Overlay.clockText(300) == "5:00", "clock at sit start")
+        check(Overlay.clockText(14.2) == "0:15", "clock rounds up")
+        check(Overlay.clockText(61) == "1:01", "clock minutes")
+        check(Overlay.clockText(-1) == "0:00", "clock never negative")
+
         if failures == 0 {
             print("all rule checks passed")
             exit(0)

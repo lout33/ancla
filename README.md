@@ -40,6 +40,10 @@ Switch on **Morning + night sits** in the menu (or `ancla sits on`) for two 5-mi
 
 A sit is a full-screen circle that breathes 4 s in, 6 s out. Press **space** each time you notice you drifted and came back, and type **one word** in the last 30 s. ESC ends it early; stray clicks are ignored. Each sit lands in the practice log with its returns and word.
 
+![A sit in progress](docs/screenshots/sit.png)
+
+Every rep and sit shows a **countdown clock** at the top (`0:12`, `4:32`), so you always know how long is left.
+
 Put if-then lines in `~/.local/state/ancla-ifthens.txt` (one per line); reps rotate through them as the intention, titled "practice". **Log ▸ training… / live rep…** (or `ancla log training|live <text>`) append to `~/.local/state/ancla-practice.csv`; the menu shows training this week against a floor of 2. Everything stays on your machine.
 
 ## Using it
